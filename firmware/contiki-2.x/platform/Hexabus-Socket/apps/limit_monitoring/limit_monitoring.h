@@ -11,6 +11,7 @@
 
 #include "process.h"
 #include <stdint.h>
+#include <string.h>
 
 
 #define LM_LIMIT_DEFINITION_MODE_ACTIVE				0x1

@@ -12,5 +12,5 @@ CONTIKI=../contiki-2.x
 include $(CONTIKI)/Makefile.include
 
 flash-jtag2: Hexabus-Socket.hex
-#	avrdude -c jtag2 -P usb -p atmega1284p -U flash:w:Hexabus-Socket.hex -F 
-	avrdude -c jtag2 -P /dev/tty.usbserial-ftCXNRH1 -p atmega1284p -U flash:w:Hexabus-Socket.hex -F 
+	avrdude -c jtag2 -P usb -p atmega1284p -U flash:w:Hexabus-Socket.hex -F 
+#	avrdude -c jtag2 -P /dev/tty.usbserial-ftCXNRH1 -p atmega1284p -U flash:w:Hexabus-Socket.hex -F 

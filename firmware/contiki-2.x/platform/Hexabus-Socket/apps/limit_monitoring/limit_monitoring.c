@@ -87,20 +87,20 @@ inline void lm_set_setActive(lm_limit_set_t *set, uint8_t active)
 	
 }
 
-static handleLimitSet(lm_limit_set_t *set) {
+static void handleLimitSet(lm_limit_set_t *set) {
 	PRINTF("Limit set %d\n", set->id);
 }
 
-static void handleLimit(int i)
+static void handleLimit(lm_limit_set_t *limit)
 {
-	if (lm_set_isActive(&limits[i]))
+	if (lm_set_isActive(limit))
 	{	
-		PRINTF("id=%d: counter %2d \t cycles %2d\n", limits[i].id, limits[i].cycleCounter, limits[i].cycles);
-		if (limits[i].cycleCounter >= limits[i].cycles) {
-			limits[i].cycleCounter=0;
-			handleLimitSet(&limits[i]);
+		PRINTF("id=%d: counter %2d \t cycles %2d\n", limit->id, 			limit->cycleCounter, limit->cycles);
+		if (limit->cycleCounter >= limit->cycles) {
+			limit->cycleCounter=0;
+			handleLimitSet(limit);
 		} else {
-			limits[i].cycleCounter = limits[i].cycleCounter + 1;
+			limit->cycleCounter = limit->cycleCounter + 1;
 		}
 	}	
 }
@@ -143,9 +143,9 @@ PROCESS_THREAD(limit_monitoring_process, ev, data) {
 		if(ev == PROCESS_EVENT_TIMER)
 		{
 			for (i=0; i < LM_LIMIT_MAX_SETS; i++) {
-				handleLimit(i);
+				handleLimit(&limits[i]);
 			}
-			PRINTF("%d.\t%2d Watt\n",  count++, metering_get_power());
+			PRINTF("%d.\t%2d Watt\n",  count++, 				metering_get_power());
 			
 			etimer_reset(&timer);
 		}
