@@ -145,12 +145,12 @@ PROCESS_THREAD(limit_monitoring_process, ev, data) {
 			for (i=0; i < LM_LIMIT_MAX_SETS; i++) {
 				handleLimit(&limits[i]);
 			}
-			PRINTF("%d.\t%2d Watt\n",  count++, 				metering_get_power());
-			
+
+			PRINTF("%d.\t%2d Watt\n",  count++, metering_get_power());
 			etimer_reset(&timer);
 		}
 	}
 	
-	
 	PROCESS_END();
 }
+

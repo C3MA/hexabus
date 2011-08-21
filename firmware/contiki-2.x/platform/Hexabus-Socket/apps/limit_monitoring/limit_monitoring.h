@@ -13,7 +13,6 @@
 #include <stdint.h>
 #include <string.h>
 
-
 #define LM_LIMIT_DEFINITION_MODE_ACTIVE				0x1
 #define LM_LIMIT_DEFINITION_MODE_DIRECTION_HIGHLOW	0x2
 #define LM_LIMIT_DEFINITION_MODE_DIRECTION_STATE	0x4 /* When the state was reached */
