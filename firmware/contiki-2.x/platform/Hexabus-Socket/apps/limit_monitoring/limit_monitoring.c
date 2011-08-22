@@ -35,7 +35,6 @@
 #define PRINTLLADDR(addr)
 #endif
 
-
 PROCESS(limit_monitoring_process, "HEXABUS Limit Monitoring Process");
 AUTOSTART_PROCESSES(&limit_monitoring_process);
 
@@ -96,11 +95,13 @@ static void handleLimit(lm_limit_set_t *limit)
 	if (lm_set_isActive(limit))
 	{	
 		PRINTF("id=%d: counter %2d \t cycles %2d\n", limit->id, 			limit->cycleCounter, limit->cycles);
+
 		if (limit->cycleCounter >= limit->cycles) {
 			limit->cycleCounter=0;
 			handleLimitSet(limit);
 		} else {
-			limit->cycleCounter = limit->cycleCounter + 1;
+			limit->cycleCounter ++;
+			PRINTF("id=%d: counter %2d \t cycles %2d %2d\n", limit->id, 			limit->cycleCounter, limit->cycles, (int) limit);
 		}
 	}	
 }
@@ -114,13 +115,17 @@ PROCESS_THREAD(limit_monitoring_process, ev, data) {
 	static int count = 0;
 	static lm_limit_set_t limits[LM_LIMIT_MAX_SETS];
 	
+	
 	// temp variables
 	int i;
 	
-	/* Initialize */
-	memset(limits, 0, sizeof(limits));
+
+	PRINTF("foobar\n");
+
+	PROCESS_BEGIN();
+
+	memset(limits,0,sizeof(limits));
 	
-	/* Set some static default values for testing */
 	limits[0].id = 1;
 	limits[0].devices[0].limit_value = 30;
 	limits[0].devices[0].limit_value = 30;
@@ -130,10 +135,7 @@ PROCESS_THREAD(limit_monitoring_process, ev, data) {
 	limits[1].id = 2;
 	lm_set_setActive(&limits[1], 1);	
 	limits[1].cycles = 12;
-	
-	PROCESS_BEGIN();
-	
-	
+
 	// set the etimer module to generate an event every ten seconds.
 	etimer_set(&timer, CLOCK_CONF_SECOND);
 	PRINTF("Limit Monitoring\n");
@@ -142,10 +144,11 @@ PROCESS_THREAD(limit_monitoring_process, ev, data) {
 		
 		if(ev == PROCESS_EVENT_TIMER)
 		{
+
 			for (i=0; i < LM_LIMIT_MAX_SETS; i++) {
 				handleLimit(&limits[i]);
+				
 			}
-
 			PRINTF("%d.\t%2d Watt\n",  count++, metering_get_power());
 			etimer_reset(&timer);
 		}
