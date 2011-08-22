@@ -93,15 +93,12 @@ static void handleLimitSet(lm_limit_set_t *set) {
 static void handleLimit(lm_limit_set_t *limit)
 {
 	if (lm_set_isActive(limit))
-	{	
-		PRINTF("id=%d: counter %2d \t cycles %2d\n", limit->id, 			limit->cycleCounter, limit->cycles);
-
+	{
 		if (limit->cycleCounter >= limit->cycles) {
 			limit->cycleCounter=0;
 			handleLimitSet(limit);
 		} else {
 			limit->cycleCounter ++;
-			PRINTF("id=%d: counter %2d \t cycles %2d %2d\n", limit->id, 			limit->cycleCounter, limit->cycles, (int) limit);
 		}
 	}	
 }
@@ -112,16 +109,11 @@ PROCESS_THREAD(limit_monitoring_process, ev, data) {
 	
 	// between kernel calls.
 	static struct etimer timer;
-	static int count = 0;
 	static lm_limit_set_t limits[LM_LIMIT_MAX_SETS];
-	
 	
 	// temp variables
 	int i;
 	
-
-	PRINTF("foobar\n");
-
 	PROCESS_BEGIN();
 
 	memset(limits,0,sizeof(limits));
@@ -138,18 +130,16 @@ PROCESS_THREAD(limit_monitoring_process, ev, data) {
 
 	// set the etimer module to generate an event every ten seconds.
 	etimer_set(&timer, CLOCK_CONF_SECOND);
+
 	PRINTF("Limit Monitoring\n");
 	while (1) {
 		PROCESS_WAIT_EVENT();
 		
 		if(ev == PROCESS_EVENT_TIMER)
 		{
-
 			for (i=0; i < LM_LIMIT_MAX_SETS; i++) {
-				handleLimit(&limits[i]);
-				
+				handleLimit(&limits[i]);				
 			}
-			PRINTF("%d.\t%2d Watt\n",  count++, metering_get_power());
 			etimer_reset(&timer);
 		}
 	}
