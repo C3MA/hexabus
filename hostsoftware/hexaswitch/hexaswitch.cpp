@@ -5,12 +5,12 @@
 #include <boost/asio.hpp>
 #include <boost/thread.hpp>
 
-#include "../../../hexabus_packet.h"
+#include "../../shared/hexabus_packet.h"
 #define HEXABUS_PORT 61616
 
 int crc16(const char* input, unsigned int length)
 {
-  boost::crc_optimal<16, 0x1021, 0x0000, 0, true, true> crc; //TODO document this! it's important and it was hard to find!
+  boost::crc_optimal<16, 0x1021, 0x0000, 0, true, true> crc; //TODO document this.
   crc.process_bytes(input, length);
   return crc.checksum();
 }

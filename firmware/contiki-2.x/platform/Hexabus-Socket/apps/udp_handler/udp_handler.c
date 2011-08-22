@@ -45,9 +45,9 @@
 #include "metering.h"
 #include "relay.h"
 #include "eeprom_variables.h"
-#include "../../../../../../../hexabus_packet.h"
+#include "../../../../../../shared/hexabus_packet.h"
 
-#define DEBUG 0
+#define DEBUG 1
 #if DEBUG
 #include <stdio.h>
 #define PRINTF(...) printf(__VA_ARGS__)
@@ -59,7 +59,7 @@
 #define PRINTLLADDR(addr)
 #endif
 
-#define UDP_DATA_LEN 120 //TODO set this to what is (going to be) specified in the hexabus spec
+#define UDP_DATA_LEN 120 //TODO set this to something to be specified in the hexabus spec
 #define UDP_IP_BUF   ((struct uip_udpip_hdr *)&uip_buf[UIP_LLH_LEN])
 #define HEXABUS_PORT 61616
 
@@ -137,7 +137,7 @@ make_message(char* buf, uint16_t command, uint16_t value)
   PRINTF("%s%02x%02x%04d\n", HEXABUS_HEADER, 2, command, value);
 }
 
-static void send_value(uint8_t value)
+static void send_value()
 {
   struct hxb_packet_bool packet;
   packet.type = HXB_PTYPE_REPLY;
@@ -146,16 +146,18 @@ static void send_value(uint8_t value)
   packet.value = relay_get_state() == 0 ? HXB_TRUE : HXB_FALSE;
   packet.crc = crc16_data((char*)&packet, 4, 0);
 
-  printf("Sending packet:\r\nType:\t%d\r\nFlags:\t%d\r\nVID:\t%d\r\nValue:\t%d\r\nCRC:\t%u\r\n\r\n",
+  PRINTF("Sending packet:\r\nType:\t%d\r\nFlags:\t%d\r\nVID:\t%d\r\nValue:\t%d\r\nCRC:\t%u\r\n\r\n",
     packet.type, packet.flags, packet.vid, packet.value, packet.crc);
 
   uip_ipaddr_copy(&udpconn->ripaddr, &UDP_IP_BUF->srcipaddr); // reply to the IP from which the request came
   udpconn->rport = UDP_IP_BUF->srcport;
   udpconn->lport = UIP_HTONS(HEXABUS_PORT);
   uip_udp_packet_send(udpconn, &packet, 6);
-  printf("sent.\r\n");
+  PRINTF("sent.\r\n");
 
-  // TODO reset IP of udpconn, so that packets from any host are accepted
+  /* Restore server connection to allow data from any node */
+  memset(&udpconn->ripaddr, 0, sizeof(udpconn->ripaddr));
+  udpconn->rport = 0;
 }
 
 static void
@@ -173,7 +175,7 @@ udphandler(process_event_t ev, process_data_t data)
       packet = (struct hxb_packet_bool*)uip_appdata;
 
       //TODO distinguish between different hexabus packet types!
-      printf("Recieved packet:\r\nType:\t%d\r\nFlags:\t%d\r\nVID:\t%d\r\nValue:\t%d\r\nCRC:\t%u\r\n\r\n",
+      PRINTF("Recieved packet:\r\nType:\t%d\r\nFlags:\t%d\r\nVID:\t%d\r\nValue:\t%d\r\nCRC:\t%u\r\n\r\n",
         packet->type, packet->flags, packet->vid, packet->value, packet->crc);
 
       //TODO check CRC of the packet, man.
@@ -189,20 +191,20 @@ udphandler(process_event_t ev, process_data_t data)
               relay_off(); // main switch turn on
             }
           } else {
-            printf("command for function ID %d recieved, but there is no function with this ID\r\n", packet->vid);
+            PRINTF("command for function ID %d recieved, but there is no function with this ID\r\n", packet->vid);
           }
           break;
         case HXB_PTYPE_REQVALUE:
           if(packet->vid == 0)
           {
-            send_value(HXB_TRUE);
+            send_value();
           } else {
-            printf("REQVALUE for function ID %d recieved, but there is no function with this ID\r\n", packet->vid);
+            PRINTF("REQVALUE for function ID %d recieved, but there is no function with this ID\r\n", packet->vid);
             //TODO specify and implement some sort of error packet
           }
           break;
         default:
-          printf("packet of type %d recieved, but we do not know what to do with that (yet)\r\n", packet->type);
+          PRINTF("packet of type %d recieved, but we do not know what to do with that (yet)\r\n", packet->type);
       }
 
       /* original code left in here for reference until I get the new code working
