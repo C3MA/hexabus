@@ -35,7 +35,7 @@ typedef struct lm_limit_set
 	uint16_t id;
 	uint8_t mode;
 	lm_limit_definition_t	devices[LM_LIMIT_MAX_DEVICES];
-	uint16_t (*getvalue)(void); /* Returns the limit value */
+	uint16_t (*getValue)(void); /* Returns the limit value */
 	uint16_t cycles; /* in seconds */
 	uint16_t cycleCounter;
 } lm_limit_set_t;

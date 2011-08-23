@@ -87,7 +87,17 @@ inline void lm_set_setActive(lm_limit_set_t *set, uint8_t active)
 }
 
 static void handleLimitSet(lm_limit_set_t *set) {
-	PRINTF("Limit set %d\n", set->id);
+	int i;
+	
+	if (set->getValue != NULL) {
+		uint16_t value = set->getValue();
+		PRINTF("Limit set %d: value is %2d\n", set->id, value);
+		for(i=0; i < LM_LIMIT_MAX_DEVICES; i++) {
+			
+		}		
+	} else {
+		PRINTF("Limit set %d has no getValue function.\n", set->id);
+	}	
 }
 
 static void handleLimit(lm_limit_set_t *limit)
@@ -123,6 +133,7 @@ PROCESS_THREAD(limit_monitoring_process, ev, data) {
 	limits[0].devices[0].limit_value = 30;
 	lm_set_setActive(&limits[0], 1);
 	limits[0].cycles = 30;
+	limits[0].getValue = metering_get_power;
 	
 	limits[1].id = 2;
 	lm_set_setActive(&limits[1], 1);	
