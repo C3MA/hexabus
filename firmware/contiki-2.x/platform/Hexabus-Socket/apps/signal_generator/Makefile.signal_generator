@@ -1,0 +1,2 @@
+signal_generator_src = signal_generator.c
+

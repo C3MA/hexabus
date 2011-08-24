@@ -105,6 +105,7 @@
 #include "udp_handler.h"
 #include "mdns_responder.h"
 #include "limit_monitoring.h"
+#include "signal_generator.h"
 
 uint8_t forwarding_enabled; //global variable for forwarding
 uint8_t encryption_enabled = 1; //global variable for AES encryption
@@ -313,6 +314,8 @@ void initialize(void)
   /* Limit Monitor Process */
   process_start(&limit_monitoring_process, NULL);
   
+/* Signal generator Process */
+  process_start(&signal_generator_process, NULL);
 
   /* Autostart other processes */
   autostart_start(autostart_processes);

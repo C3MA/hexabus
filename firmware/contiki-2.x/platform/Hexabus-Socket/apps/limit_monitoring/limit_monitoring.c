@@ -11,6 +11,8 @@
 #include "contiki-lib.h"
 #include "metering.h"
 
+#include "signal_generator.h"
+
 /*#include <avr/io.h>
 #include <util/delay.h>
 #include "sys/clock.h"
@@ -68,9 +70,9 @@ inline uint8_t lm_set_isActive(lm_limit_set_t *set)
 	return (set->mode & LM_LIMIT_SET_MODE_ACTIVE);
 }
 
-inline uint8_t lm_definition_isActive(lm_limit_set_t *definition)
+inline uint8_t lm_definition_isActive(lm_limit_definition_t *definition)
 {
-	return (definition->mode & LM_LIMIT_SET_MODE_ACTIVE);
+	return (definition->mode & LM_LIMIT_DEFINITION_MODE_ACTIVE);
 }
 
 inline void lm_set_setActive(lm_limit_set_t *set, uint8_t active)
@@ -86,6 +88,51 @@ inline void lm_set_setActive(lm_limit_set_t *set, uint8_t active)
 	
 }
 
+static void handleLimitDef(lm_limit_definition_t *def, uint16_t value) {
+	PRINTF("check limt %2d mode %d\n", def->limit_value, def->mode);
+	if(def->mode & LM_LIMIT_DEFINITION_MODE_DIRECTION_STATE) { // limit reached
+		if (def->mode & LM_LIMIT_DEFINITION_MODE_DIRECTION_HIGHLOW) { // High limit
+			if ( value >= def-> limit_value) {
+				
+			} else {
+				if (++(def->tick_counter) >= def->tick_deadband) {
+					def->tick_counter = 0;
+					def->mode &= ~LM_LIMIT_DEFINITION_MODE_DIRECTION_STATE;
+					PRINTF("was high\n");
+				}
+			}
+		} else { // Low limit
+			if ( value <= def->limit_value) {
+				
+			} else {
+				if (++(def->tick_counter) >= def->tick_deadband) {
+					def->tick_counter = 0;
+					def->mode &= ~LM_LIMIT_DEFINITION_MODE_DIRECTION_STATE;
+					PRINTF("was low\n");
+				}
+			}
+		}
+	} else {
+		if (def->mode & LM_LIMIT_DEFINITION_MODE_DIRECTION_HIGHLOW) { // High limit
+			if ( value >= def->limit_value) {
+				if (++(def->tick_counter) >= def->tick_deadband) {
+					def->tick_counter = 0;
+					def->mode |= LM_LIMIT_DEFINITION_MODE_DIRECTION_STATE;
+					PRINTF("is high\n");
+				}
+			}
+		} else { // Low limit
+			if ( value <= def->limit_value) {
+				if (++(def->tick_counter) >= def->tick_deadband) {
+					def->tick_counter = 0;
+					def->mode |= LM_LIMIT_DEFINITION_MODE_DIRECTION_STATE;
+					PRINTF("is low\n");
+				}
+			}
+		}
+	}
+}
+
 static void handleLimitSet(lm_limit_set_t *set) {
 	int i;
 	
@@ -93,7 +140,10 @@ static void handleLimitSet(lm_limit_set_t *set) {
 		uint16_t value = set->getValue();
 		PRINTF("Limit set %d: value is %2d\n", set->id, value);
 		for(i=0; i < LM_LIMIT_MAX_DEVICES; i++) {
-			
+			PRINTF("check device %d mode %d\n", i, set->devices[i].mode);
+			if (lm_definition_isActive(&(set->devices[i]))) {
+				handleLimitDef(&(set->devices[i]), value);			
+			}
 		}		
 	} else {
 		PRINTF("Limit set %d has no getValue function.\n", set->id);
@@ -129,20 +179,26 @@ PROCESS_THREAD(limit_monitoring_process, ev, data) {
 	memset(limits,0,sizeof(limits));
 	
 	limits[0].id = 1;
-	limits[0].devices[0].limit_value = 30;
-	limits[0].devices[0].limit_value = 30;
+	limits[0].devices[0].limit_value = 15;
+	limits[0].devices[0].limit_value = 15;
 	lm_set_setActive(&limits[0], 1);
-	limits[0].cycles = 30;
+	limits[0].cycles = 15;
 	limits[0].getValue = metering_get_power;
 	
 	limits[1].id = 2;
 	lm_set_setActive(&limits[1], 1);	
-	limits[1].cycles = 12;
+	limits[1].cycles = 5;
+	limits[1].getValue = sg_getValue;
+	limits[1].devices[0].limit_value = 1000;
+	limits[1].devices[0].mode = 3; // active High Limit
+	limits[1].devices[0].tick_deadband = 2;
+	limits[1].devices[1].limit_value = 700;
+	limits[1].devices[1].mode = 1; // active High Limit
+	limits[1].devices[1].tick_deadband = 2;
 
 	// set the etimer module to generate an event every ten seconds.
 	etimer_set(&timer, CLOCK_CONF_SECOND);
 
-	PRINTF("Limit Monitoring\n");
 	while (1) {
 		PROCESS_WAIT_EVENT();
 		

@@ -19,8 +19,8 @@
 
 #define LM_LIMIT_SET_MODE_ACTIVE				0x1
 
-#define LM_LIMIT_MAX_SETS		4
-#define LM_LIMIT_MAX_DEVICES	4
+#define LM_LIMIT_MAX_SETS 4
+#define LM_LIMIT_MAX_DEVICES 4
 
 typedef struct lm_limit_definition
 {
@@ -34,7 +34,7 @@ typedef struct lm_limit_set
 {
 	uint16_t id;
 	uint8_t mode;
-	lm_limit_definition_t	devices[LM_LIMIT_MAX_DEVICES];
+	lm_limit_definition_t devices[LM_LIMIT_MAX_DEVICES];
 	uint16_t (*getValue)(void); /* Returns the limit value */
 	uint16_t cycles; /* in seconds */
 	uint16_t cycleCounter;
@@ -46,7 +46,7 @@ inline void lm_setActive(lm_limit_definition_t *definition, uint8_t active);
 inline void lm_setDirection(lm_limit_definition_t *definition, uint8_t highlow);
 
 inline uint8_t lm_set_isActive(lm_limit_set_t *set);
-inline uint8_t lm_definition_isActive(lm_limit_set_t *definition);
+inline uint8_t lm_definition_isActive(lm_limit_definition_t *definition);
 
 inline void lm_set_setActive(lm_limit_set_t *set, uint8_t active);
 
