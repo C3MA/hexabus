@@ -38,6 +38,7 @@
 #define PRINTLLADDR(addr)
 #endif
 
+
 PROCESS(limit_monitoring_process, "HEXABUS Limit Monitoring Process");
 AUTOSTART_PROCESSES(&limit_monitoring_process);
 
@@ -99,6 +100,8 @@ static void handleLimitDef(lm_limit_definition_t *def, uint16_t value) {
 					def->tick_counter = 0;
 					def->mode &= ~LM_LIMIT_DEFINITION_MODE_DIRECTION_STATE;
 					PRINTF("was high\n");
+					def->event_data.payload.Word = 0;
+					process_post(&event_router_process, def->event, &(def->event_data));
 				}
 			}
 		} else { // Low limit
@@ -109,6 +112,8 @@ static void handleLimitDef(lm_limit_definition_t *def, uint16_t value) {
 					def->tick_counter = 0;
 					def->mode &= ~LM_LIMIT_DEFINITION_MODE_DIRECTION_STATE;
 					PRINTF("was low\n");
+					def->event_data.payload.Word = 0;
+					process_post(&event_router_process, def->event, &(def->event_data));
 				}
 			}
 		}
@@ -119,7 +124,8 @@ static void handleLimitDef(lm_limit_definition_t *def, uint16_t value) {
 					def->tick_counter = 0;
 					def->mode |= LM_LIMIT_DEFINITION_MODE_DIRECTION_STATE;
 					PRINTF("is high\n");
-					process_post(&event_router_process, event_data_ready, &value);
+					def->event_data.payload.Word = 1;
+					process_post(&event_router_process, def->event, &(def->event_data));
 				}
 			}
 		} else { // Low limit
@@ -128,18 +134,20 @@ static void handleLimitDef(lm_limit_definition_t *def, uint16_t value) {
 					def->tick_counter = 0;
 					def->mode |= LM_LIMIT_DEFINITION_MODE_DIRECTION_STATE;
 					PRINTF("is low\n");
+					def->event_data.payload.Word = 1;
+					process_post(&event_router_process, def->event, &(def->event_data));
 				}
 			}
 		}
 	}
 }
 
+
 static void handleLimitSet(lm_limit_set_t *set) {
 	int i;
 	
 	if (set->getValue != NULL) {
 		uint16_t value = set->getValue();
-		PRINTF("Limit set %d: value is %2d\n", set->id, value);
 		for(i=0; i < LM_LIMIT_MAX_DEVICES; i++) {
 			if (lm_definition_isActive(&(set->devices[i]))) {
 				handleLimitDef(&(set->devices[i]), value);			
@@ -181,21 +189,32 @@ PROCESS_THREAD(limit_monitoring_process, ev, data) {
 	limits[0].id = 1;
 	limits[0].devices[0].limit_value = 15;
 	limits[0].devices[0].limit_value = 15;
+
 	lm_set_setActive(&limits[0], 1);
 	limits[0].cycles = 15;
 	limits[0].getValue = metering_get_power;
 	
 	limits[1].id = 2;
 	lm_set_setActive(&limits[1], 1);	
-	limits[1].cycles = 5;
+	limits[1].cycles = 2;
 	limits[1].getValue = sg_getValue;
 	limits[1].devices[0].limit_value = 1000;
 	limits[1].devices[0].mode = 3; // active High Limit
 	limits[1].devices[0].tick_deadband = 2;
+	limits[1].devices[0].event_data.vendorID = 0x23;
+	limits[1].devices[0].event_data.deviceID = 0x10;
+	limits[1].devices[0].event_data.deviceClass = 0x00;
+	limits[1].devices[0].event_data.type = ER_PAYLOAD_TYPE_WORD;
+	limits[1].devices[0].event = process_alloc_event();
+	
 	limits[1].devices[1].limit_value = 700;
 	limits[1].devices[1].mode = 1; // active High Limit
 	limits[1].devices[1].tick_deadband = 2;
-
+	limits[1].devices[1].event_data.vendorID = 0x23;
+	limits[1].devices[1].event_data.deviceID = 0x11;
+	limits[1].devices[1].event_data.deviceClass = 0x00;
+	limits[1].devices[1].event_data.type = ER_PAYLOAD_TYPE_WORD;
+	limits[1].devices[1].event = process_alloc_event();
 
 	// set the etimer module to generate an event every ten seconds.
 	etimer_set(&timer, CLOCK_CONF_SECOND);

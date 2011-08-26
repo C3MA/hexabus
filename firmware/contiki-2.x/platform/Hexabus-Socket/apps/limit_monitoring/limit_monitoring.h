@@ -10,6 +10,7 @@
 
 
 #include "process.h"
+#include "event_router.h"
 #include <stdint.h>
 #include <string.h>
 
@@ -27,7 +28,9 @@ typedef struct lm_limit_definition
 	uint8_t		mode; /* Set via LM_LIMIT_DEFINITION_MODE_* */
 	uint16_t	limit_value;		/* All borders fits into 16bit */
 	uint8_t		tick_deadband;
-	uint8_t		tick_counter;	
+	uint8_t		tick_counter;
+	event_data_t	event_data;
+	process_event_t event;	
 } lm_limit_definition_t;
 
 typedef struct lm_limit_set

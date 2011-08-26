@@ -23,7 +23,6 @@
 #define PRINTLLADDR(addr)
 #endif
 
-process_event_t event_data_ready;
 
 PROCESS(event_router_process, "HEXABUS event_router");
 AUTOSTART_PROCESSES(&event_router_process);
@@ -33,21 +32,21 @@ PROCESS_THREAD(event_router_process, ev, data) {
 	// variables are declared static to ensure their values are kept
 	
 	// between kernel calls.
-	static struct etimer timer;
 	
 	// temp variables
-
+	
 	
 	PROCESS_BEGIN();
 
 	
 	PRINTF("event_router started.\n");
 	while (1) {
-		// wait until we get a data_ready event
-		PROCESS_WAIT_EVENT_UNTIL(ev == event_data_ready);
- 
+		// wait until we get an event
+		PROCESS_WAIT_EVENT();
+		if (ev == PROCESS_EVENT_EXITED) continue; //Why?
+
  	      	// display it
-        	PRINTF("temperature = %d\n", (*(uint16_t*)data));
+        	PRINTF("Event empfangen: vendor=%x, device=%x, class=%x, payload=%x\n", ((event_data_t*)data)->vendorID, ((event_data_t*)data)->deviceID, ((event_data_t*)data)->deviceClass, ((event_data_t*)data)->payload.Word);
 	}
 	
 	PROCESS_END();
