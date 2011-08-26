@@ -12,6 +12,7 @@
 #include "metering.h"
 
 #include "signal_generator.h"
+#include "event_router.h"
 
 /*#include <avr/io.h>
 #include <util/delay.h>
@@ -65,12 +66,12 @@ inline void lm_setDirection(lm_limit_definition_t *definition, uint8_t highlow)
 	}
 }
 
-inline uint8_t lm_set_isActive(lm_limit_set_t *set)
+inline uint8_t lm_set_isActive(const lm_limit_set_t *set)
 {
 	return (set->mode & LM_LIMIT_SET_MODE_ACTIVE);
 }
 
-inline uint8_t lm_definition_isActive(lm_limit_definition_t *definition)
+inline uint8_t lm_definition_isActive(const lm_limit_definition_t *definition)
 {
 	return (definition->mode & LM_LIMIT_DEFINITION_MODE_ACTIVE);
 }
@@ -89,7 +90,6 @@ inline void lm_set_setActive(lm_limit_set_t *set, uint8_t active)
 }
 
 static void handleLimitDef(lm_limit_definition_t *def, uint16_t value) {
-	PRINTF("check limt %2d mode %d\n", def->limit_value, def->mode);
 	if(def->mode & LM_LIMIT_DEFINITION_MODE_DIRECTION_STATE) { // limit reached
 		if (def->mode & LM_LIMIT_DEFINITION_MODE_DIRECTION_HIGHLOW) { // High limit
 			if ( value >= def-> limit_value) {
@@ -119,6 +119,7 @@ static void handleLimitDef(lm_limit_definition_t *def, uint16_t value) {
 					def->tick_counter = 0;
 					def->mode |= LM_LIMIT_DEFINITION_MODE_DIRECTION_STATE;
 					PRINTF("is high\n");
+					process_post(&event_router_process, event_data_ready, &value);
 				}
 			}
 		} else { // Low limit
@@ -140,7 +141,6 @@ static void handleLimitSet(lm_limit_set_t *set) {
 		uint16_t value = set->getValue();
 		PRINTF("Limit set %d: value is %2d\n", set->id, value);
 		for(i=0; i < LM_LIMIT_MAX_DEVICES; i++) {
-			PRINTF("check device %d mode %d\n", i, set->devices[i].mode);
 			if (lm_definition_isActive(&(set->devices[i]))) {
 				handleLimitDef(&(set->devices[i]), value);			
 			}
@@ -195,6 +195,7 @@ PROCESS_THREAD(limit_monitoring_process, ev, data) {
 	limits[1].devices[1].limit_value = 700;
 	limits[1].devices[1].mode = 1; // active High Limit
 	limits[1].devices[1].tick_deadband = 2;
+
 
 	// set the etimer module to generate an event every ten seconds.
 	etimer_set(&timer, CLOCK_CONF_SECOND);

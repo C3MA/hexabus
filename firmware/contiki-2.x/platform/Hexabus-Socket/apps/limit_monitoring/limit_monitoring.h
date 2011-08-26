@@ -45,8 +45,8 @@ PROCESS_NAME(limit_monitoring_process);
 inline void lm_setActive(lm_limit_definition_t *definition, uint8_t active);
 inline void lm_setDirection(lm_limit_definition_t *definition, uint8_t highlow);
 
-inline uint8_t lm_set_isActive(lm_limit_set_t *set);
-inline uint8_t lm_definition_isActive(lm_limit_definition_t *definition);
+inline uint8_t lm_set_isActive(const lm_limit_set_t *set);
+inline uint8_t lm_definition_isActive(const lm_limit_definition_t *definition);
 
 inline void lm_set_setActive(lm_limit_set_t *set, uint8_t active);
 
